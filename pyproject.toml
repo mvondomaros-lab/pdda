@@ -1,0 +1,64 @@
+[project]
+name = "pdda"
+version = "0.3"
+
+authors = [
+    { name = "Michael von Domaros", email = "mvondomaros@uni-marburg.de" }
+]
+description = "Library for computing position dependent diffusivities from molecular dynamics simulations."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+
+requires-python = ">=3.12"
+dependencies = [
+    "numba>=0.63.1,<0.64",
+    "numpy>=2.3.5,<3",
+]
+
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pdda"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "pdda",
+    "README.md",
+    "LICENSE"
+]
+
+[tool.pixi.workspace]
+channels = ["https://prefix.dev/conda-forge"]
+platforms = ["osx-arm64", "linux-64"]
+preview = ["pixi-build"]
+
+[tool.pixi.dependencies]
+hatch = ">=1.16.2,<2"
+pytest = ">=9.0.2,<10"
+
+[tool.pixi.feature.dev.dependencies]
+pixi-pycharm = ">=0.0.10,<0.0.11"
+numpy = "<2.4"
+matplotlib = "*"
+jupyter = ">=1.1.1,<2"
+
+[tool.pixi.environments]
+default = { features = [] }
+dev = { features = ["dev"] }
+
+[tool.pixi.pypi-dependencies]
+pdda = { path = ".", editable = true }
+
+[tool.pixi.package.build.backend]
+name = "pixi-build-python"
+version = "*"
+channels = [
+    "https://prefix.dev/pixi-build-backends",
+    "https://prefix.dev/conda-forge",
+]
+
+[tool.pixi.package.build.config]
+ignore-pypi-mapping = false
