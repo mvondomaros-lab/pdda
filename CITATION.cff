@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the associated arXiv preprint."
+title: "pdda"
+type: dataset
+
+authors:
+  - family-names: Thomas
+    given-names: Rinto
+  - family-names: Prabhakar
+    given-names: Praveen Ranganath
+  - family-names: von Domaros
+    given-names: Michael
+
+preferred-citation:
+  type: article
+  title: "A Residence-Time Approach for Determining Position-Dependent Diffusivities from Biased Molecular Simulations"
+  authors:
+    - family-names: Thomas
+      given-names: Rinto
+    - family-names: Prabhakar
+      given-names: Praveen Ranganath
+    - family-names: von Domaros
+      given-names: Michael
+  year: 2026
+  identifiers:
+    - type: other
+      value: arXiv:submit/7435766
+  url: https://arxiv.org/submit/7435766

@@ -42,3 +42,11 @@ xmin, xmax = 4.0, 6.0
 D_est, D_sem = diffusivity(x, xmin, xmax, dt)
 
 print("D =", D_est, "+/-", D_sem)
+
+## Citation
+
+If you use this code, please cite:
+
+Thomas, R.; Prabhakar, P. R.; von Domaros, M.
+A Residence-Time Approach for Determining Position-Dependent Diffusivities from Biased Molecular Simulations.
+arXiv:submit/7435766 (2026).
