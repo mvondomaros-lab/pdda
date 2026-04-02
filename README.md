@@ -42,6 +42,7 @@ xmin, xmax = 4.0, 6.0
 D_est, D_sem = diffusivity(x, xmin, xmax, dt)
 
 print("D =", D_est, "+/-", D_sem)
+```
 
 ## Citation
 
