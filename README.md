@@ -50,4 +50,4 @@ If you use this code, please cite:
 
 Thomas, R.; Prabhakar, P. R.; von Domaros, M.
 A Residence-Time Approach for Determining Position-Dependent Diffusivities from Biased Molecular Simulations.
-arXiv:submit/7435766 (2026).
+[arXiv:2604.01940](https://arxiv.org/abs/2604.01940) (2026).
