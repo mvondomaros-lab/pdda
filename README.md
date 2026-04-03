@@ -23,7 +23,7 @@ where $\tau_\Omega$ is the mean first-exit time, averaged over all trajectory fr
 
 PDDA includes an implementation of Jonsson’s automated blocking method to estimate the standard error of the mean (SEM) from correlated time series.
 
-- Jonsson, *Phys. Rev. E* **98**, 043304 (2018). https://doi.org/10.1103/PhysRevE.98.043304
+- Jonsson, *Phys. Rev. E* **98**, 043304 (2018). [DOI: 10.1103/PhysRevE.98.043304](https://doi.org/10.1103/PhysRevE.98.043304)
 
 In code, this is exposed via `helpers.sem(x, corr=True)`.
 
@@ -50,4 +50,4 @@ If you use this code, please cite:
 
 Thomas, R.; Prabhakar, P. R.; von Domaros, M.
 A Residence-Time Approach for Determining Position-Dependent Diffusivities from Biased Molecular Simulations.
-[arXiv:2604.01940](https://arxiv.org/abs/2604.01940) (2026).
+[arXiv: 2604.01940](https://arxiv.org/abs/2604.01940) (2026).
