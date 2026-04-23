@@ -1,0 +1,77 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "deploy"
+  cancel-in-progress: true
+
+env:
+  ORG: mvondomaros-lab
+  PAGES_REPO: mvondomaros-lab.github.io
+  BRANCH_PREFIX: publish/pdda
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pixi
+        uses: prefix-dev/setup-pixi@v0.8.1
+
+      - name: Build Artifacts
+        run: |
+          pixi install
+          pixi build
+          pixi run hatch build
+
+      - name: Stage Artifacts
+        run: |
+          mkdir -p out/conda/noarch out/pypi
+          cp -v *.conda out/conda/noarch/
+          cp -v dist/*.{whl,tar.gz} out/pypi/
+
+      - name: Prepare Git Identity
+        run: |
+          git config --global user.name  "mvondomaros-lab-bot"
+          git config --global user.email "actions@github.com"
+
+      - name: Push to Pages Repo
+        env:
+          PAGES_PUSH_TOKEN: ${{ secrets.PAGES_PUSH_TOKEN }}
+        run: |
+          BRANCH="${BRANCH_PREFIX}-${GITHUB_REF_NAME}-${GITHUB_RUN_ID}-${GITHUB_SHA::7}"
+
+          git clone "https://x-access-token:${PAGES_PUSH_TOKEN}@github.com/${ORG}/${PAGES_REPO}.git" pages
+          cd pages
+          git checkout -b "$BRANCH"
+
+          mkdir -p pypi conda
+
+          rsync -av ../out/pypi/ pypi/
+          rsync -av ../out/conda/ conda/
+
+          git add pypi conda
+          git commit -m "pdda: publish ${GITHUB_REF_NAME} (${GITHUB_SHA})"
+          git push -u origin HEAD
+
+      - name: Open PR to Pages Repo
+        env:
+          GH_TOKEN: ${{ secrets.PAGES_PUSH_TOKEN }}
+        run: |
+          BRANCH="${BRANCH_PREFIX}-${GITHUB_REF_NAME}-${GITHUB_RUN_ID}-${GITHUB_SHA::7}"
+
+          gh pr create \
+            --repo "${ORG}/${PAGES_REPO}" \
+            --title "Publish pdda ${GITHUB_REF_NAME}" \
+            --body "Adds new artifacts from ${GITHUB_REPOSITORY} @ ${GITHUB_SHA}.\n" \
+            --base main \
+            --head "$BRANCH"
