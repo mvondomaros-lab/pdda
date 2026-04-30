@@ -37,7 +37,6 @@ preview = ["pixi-build"]
 [tool.pixi.dependencies]
 hatch = "*"
 pytest = "*"
-pixi-pycharm = "*"
 
 [tool.pixi.pypi-dependencies]
 pdda = { path = ".", editable = true }
