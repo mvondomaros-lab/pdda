@@ -1,6 +1,6 @@
 [project]
 name = "pdda"
-version = "0.3"
+version = "0.4"
 authors = [
     { name = "Michael von Domaros", email = "mvondomaros@uni-marburg.de" }
 ]
@@ -35,19 +35,24 @@ platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
 [tool.pixi.dependencies]
-hatch = "*"
-pytest = "*"
+hatch = ">=1.17.0,<2"
+pytest = ">=9.0.3,<10"
 
-[tool.pixi.pypi-dependencies]
-pdda = { path = ".", editable = true }
+[tool.pixi.tasks]
+build-conda = { cmd = "pixi publish" }
+build-wheel = { cmd = "hatch build" }
+stage-artifacts = { cmd = """
+rm -rf out
+mkdir -p out/conda/noarch out/pypi
+cp *.conda out/conda/noarch/
+cp dist/*.whl out/pypi/
+cp dist/*.tar.gz out/pypi/
+""" }
+build-artifacts = { depends-on = ["build-conda", "build-wheel", "stage-artifacts"] }
 
 [tool.pixi.package.build.backend]
 name = "pixi-build-python"
-version = "*"
-channels = [
-    "https://prefix.dev/pixi-build-backends",
-    "https://prefix.dev/conda-forge",
-]
+version = "<=0.5,<0.6"
 
 [tool.pixi.package.build.config]
 ignore-pypi-mapping = false

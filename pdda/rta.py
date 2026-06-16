@@ -19,34 +19,59 @@ Terminology (discrete trajectory):
 - Valid frame: a frame with x[k] ∈ Ω. Exit times are computed from all valid frames.
 """
 
-from typing import Tuple
-
 import numba
 import numpy as np
+from numpy.typing import ArrayLike, NDArray
 
 from . import helpers
 
+__all__ = ["split_segments", "exit_times", "residence_time", "diffusivity"]
 
-@numba.njit(cache=True, fastmath=True)
-def _count_inside(x: np.ndarray, xmin: float, xmax: float) -> int:
-    """
-    Count valid frames, i.e., indices k with x[k] ∈ Ω.
 
-    :param x: Trajectory samples x[k].
-    :param xmin: Lower bound of Ω (inclusive).
-    :param xmax: Upper bound of Ω (exclusive).
-    :returns: Number of valid frames.
+def split_segments(x: ArrayLike, xmin: float, xmax: float, ) -> list[NDArray[np.floating]]:
     """
-    n_inside = 0
+    Split a trajectory into contiguous segments lying entirely in Ω = [xmin, xmax).
+
+    Each returned array is a maximal contiguous portion of the trajectory for
+    which every sample satisfies xmin <= x < xmax.
+
+    Parameters
+    ----------
+    x
+        Trajectory samples ``x[k]``.
+    xmin
+        Lower bound of Ω, inclusive.
+    xmax
+        Upper bound of Ω, exclusive.
+
+    Returns
+    -------
+    list of numpy.ndarray
+        Contiguous trajectory segments as NumPy arrays. Returns an empty list if
+        the trajectory never enters Ω.
+    """
+    x = np.asarray(x)
+    segments: list[NDArray[np.floating]] = []
+    start = -1
+
     for i in range(x.shape[0]):
-        xi = x[i]
-        if xi >= xmin and xi < xmax:
-            n_inside += 1
-    return n_inside
+        inside = xmin <= x[i] < xmax
+
+        if inside:
+            if start == -1:
+                start = i
+        elif start != -1:
+            segments.append(x[start:i])
+            start = -1
+
+    if start != -1:
+        segments.append(x[start:])
+
+    return segments
 
 
 @numba.njit(cache=True, fastmath=True)
-def exit_times(x: np.ndarray, xmin: float, xmax: float, dt: float) -> np.ndarray:
+def exit_times(x: NDArray[np.floating], xmin: float, xmax: float, dt: float) -> NDArray[np.float64]:
     """
     Compute first-exit times from Ω = [xmin, xmax) for all valid frames.
 
@@ -64,12 +89,22 @@ def exit_times(x: np.ndarray, xmin: float, xmax: float, dt: float) -> np.ndarray
       Two passes are used: (1) count valid frames to allocate the output array,
       (2) scan the trajectory to fill the exit-time samples.
 
-    :param x: Trajectory samples x[k].
-    :param xmin: Lower bound of Ω (inclusive).
-    :param xmax: Upper bound of Ω (exclusive).
-    :param dt: Time step between frames.
-    :returns: Exit times (same units as dt), one per valid frame.
-              Returns an empty array if the trajectory never visits Ω.
+    Parameters
+    ----------
+    x
+        Trajectory samples ``x[k]``.
+    xmin
+        Lower bound of Ω, inclusive.
+    xmax
+        Upper bound of Ω, exclusive.
+    dt
+        Time step between frames.
+
+    Returns
+    -------
+    numpy.ndarray
+        Exit times, in the same units as ``dt``, one per valid frame. Returns an
+        empty array if the trajectory never visits Ω.
     """
     n_inside = _count_inside(x, xmin, xmax)
     if n_inside == 0:
@@ -92,7 +127,7 @@ def exit_times(x: np.ndarray, xmin: float, xmax: float, dt: float) -> np.ndarray
                 idx += run_len
                 run_len = 0
 
-    # Flush the final segment of valid frames (if the last samples lie in Ω).
+    # Final segment.
     if run_len > 0:
         for k in range(run_len):
             out[idx + k] = (run_len - k) * dt
@@ -101,9 +136,7 @@ def exit_times(x: np.ndarray, xmin: float, xmax: float, dt: float) -> np.ndarray
     return out
 
 
-def residence_time(
-    x: np.ndarray, xmin: float, xmax: float, dt: float
-) -> Tuple[float, float]:
+def residence_time(x: NDArray[np.floating], xmin: float, xmax: float, dt: float) -> tuple[float, float]:
     """
     Compute the mean residence time τ_Ω in Ω = [xmin, xmax) and its SEM.
 
@@ -113,13 +146,23 @@ def residence_time(
     The SEM accounts for temporal correlation in the exit-time series using Jonsson’s
     automated blocking method.
 
-    :param x: Trajectory samples x[k].
-    :param xmin: Lower bound of Ω (inclusive).
-    :param xmax: Upper bound of Ω (exclusive).
-    :param dt: Time step between frames.
-    :returns: (tau_omega, tau_omega_sem).
-              Returns (NaN, NaN) if the trajectory never visits Ω.
-              If the SEM cannot be estimated (e.g., insufficient data), returns SEM = NaN.
+    Parameters
+    ----------
+    x
+        Trajectory samples ``x[k]``.
+    xmin
+        Lower bound of Ω, inclusive.
+    xmax
+        Upper bound of Ω, exclusive.
+    dt
+        Time step between frames.
+
+    Returns
+    -------
+    tuple of float
+        ``(tau_omega, tau_omega_sem)``. Returns ``(NaN, NaN)`` if the trajectory
+        never visits Ω. If the SEM cannot be estimated, for example because of
+        insufficient data, returns ``SEM = NaN``.
     """
     times = exit_times(x, xmin, xmax, dt)
     if times.size == 0:
@@ -134,12 +177,7 @@ def residence_time(
     return tau_omega, tau_omega_sem
 
 
-def diffusivity(
-    x: np.ndarray,
-    xmin: float,
-    xmax: float,
-    dt: float,
-) -> Tuple[float, float]:
+def diffusivity(x: NDArray[np.floating], xmin: float, xmax: float, dt: float, ) -> tuple[float, float]:
     """
     Estimate the bulk diffusivity in Ω = [xmin, xmax) and its SEM.
 
@@ -149,13 +187,22 @@ def diffusivity(
     SEM is propagated linearly from τ_Ω:
         sem(D_est) ≈ (L^2/12) * sem(τ_Ω) / τ_Ω^2
 
-    :param x: Trajectory samples x[k].
-    :param xmin: Lower bound of Ω (inclusive).
-    :param xmax: Upper bound of Ω (exclusive).
-    :param dt: Time step between frames.
-    :returns: (D_est, D_est_sem).
-              Returns (NaN, NaN) if τ_Ω is undefined.
-              If sem(τ_Ω) is undefined, returns SEM = NaN.
+    Parameters
+    ----------
+    x
+        Trajectory samples ``x[k]``.
+    xmin
+        Lower bound of Ω, inclusive.
+    xmax
+        Upper bound of Ω, exclusive.
+    dt
+        Time step between frames.
+
+    Returns
+    -------
+    tuple of float
+        ``(D_est, D_est_sem)``. Returns ``(NaN, NaN)`` if τ_Ω is undefined. If
+        ``sem(τ_Ω)`` is undefined, returns ``SEM = NaN``.
     """
     tau_omega, tau_omega_sem = residence_time(x, xmin, xmax, dt)
     if not np.isfinite(tau_omega) or tau_omega <= 0.0:
@@ -170,3 +217,14 @@ def diffusivity(
 
     D_est_sem = pref * tau_omega_sem / (tau_omega * tau_omega)
     return float(D_est), float(D_est_sem)
+
+
+@numba.njit(cache=True, fastmath=True)
+def _count_inside(x: np.ndarray, xmin: float, xmax: float) -> int:
+    """Count valid frames."""
+    n_inside = 0
+    for i in range(x.shape[0]):
+        xi = x[i]
+        if xi >= xmin and xi < xmax:
+            n_inside += 1
+    return n_inside
