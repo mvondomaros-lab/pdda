@@ -1,6 +1,6 @@
 [project]
 name = "pdda"
-version = "0.4"
+version = "0.5"
 authors = [
     { name = "Michael von Domaros", email = "mvondomaros@uni-marburg.de" }
 ]
