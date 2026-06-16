@@ -58,6 +58,9 @@ jobs:
             pages
           cd pages
           git checkout -b "$BRANCH"
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
           mkdir -p pypi conda
           rsync -av ../out/pypi/ pypi/
