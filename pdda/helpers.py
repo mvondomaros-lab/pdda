@@ -1,29 +1,61 @@
 import numpy as np
+from numpy.typing import ArrayLike, NDArray
+
+__all__ = ["prevpow2", "sem", ]
 
 
 def prevpow2(x: int | float) -> int:
     """
-    Largest power of two less than or equal to abs(x).
+    Return the largest power of two less than or equal to ``abs(x)``.
 
-    :param x: Input value.
-    :return: Largest power of 2 <= abs(x). Returns 1 if abs(x) < 1.
+    Parameters
+    ----------
+    x
+        Input value.
+
+    Returns
+    -------
+    int
+        Largest power of two less than or equal to ``abs(x)``. Returns ``1`` if
+        ``abs(x) < 1``.
     """
     n = int(abs(x))
     return 1 if n == 0 else 1 << (n.bit_length() - 1)
 
 
-def _sem_iid(x: np.ndarray) -> float:
+def sem(x: ArrayLike, *, corr: bool = False) -> float:
     """
-    SEM of the mean assuming independent samples.
+    Compute the standard error of the mean (SEM).
 
-    Computes the standard error of the sample mean under the i.i.d. assumption:
-        SEM = s / sqrt(n)
-    where s is the sample standard deviation (ddof=1).
+    If ``corr=False``, assumes independent samples and estimates ``SEM = s / sqrt(n)``.
+    If ``corr=True``, accounts for temporal correlation using Jonsson's automated
+    blocking method.
 
-    :param x: 1D array of samples.
-    :return: SEM of the sample mean (Python float).
-    :raises ValueError: If x is not 1D, has <2 samples, or contains non-finite values.
+    Parameters
+    ----------
+    x
+        One-dimensional array of samples.
+    corr
+        If ``True``, estimate SEM for correlated data using blocking. If ``False``,
+        estimate the i.i.d. SEM.
+
+    Returns
+    -------
+    float
+        Standard error of the sample mean.
+
+    Raises
+    ------
+    ValueError
+        If ``x`` is invalid, contains non-finite values, or, when ``corr=True``,
+        contains insufficient data for blocking.
     """
+    x = np.asarray(x, dtype=np.float64)
+    return _sem_corr_blocking(x) if corr else _sem_iid(x)
+
+
+def _sem_iid(x: NDArray[np.float64]) -> float:
+    """SEM for i.i.d. samples."""
     if x.ndim != 1:
         raise ValueError("sem expects a 1D array")
     if x.size < 2:
@@ -35,20 +67,8 @@ def _sem_iid(x: np.ndarray) -> float:
     return float(s / np.sqrt(x.size))
 
 
-def _sem_corr_blocking(x: np.ndarray) -> float:
-    """
-    SEM of the mean for correlated time series (automated blocking).
-
-    Implements Jonsson's automated blocking method:
-        https://doi.org/10.1103/PhysRevE.98.043304
-
-    The input is truncated to the largest power-of-two length. If the time series
-    is too short to determine a stable blocking level, a ValueError is raised.
-
-    :param x: 1D array of samples (correlated time series).
-    :return: SEM of the sample mean (Python float).
-    :raises ValueError: If x is not 1D, contains non-finite values, or is too short.
-    """
+def _sem_corr_blocking(x: NDArray[np.float64]) -> float:
+    """SEM via blocking."""
     if x.ndim != 1:
         raise ValueError("sem expects a 1D array")
     if x.size < 4:
@@ -64,40 +84,10 @@ def _sem_corr_blocking(x: np.ndarray) -> float:
     x = np.asarray(x[:n], dtype=np.float64)
 
     q = np.array(
-        [
-            6.634897,
-            9.210340,
-            11.344867,
-            13.276704,
-            15.086272,
-            16.811894,
-            18.475307,
-            20.090235,
-            21.665994,
-            23.209251,
-            24.724970,
-            26.216967,
-            27.688250,
-            29.141238,
-            30.577914,
-            31.999927,
-            33.408664,
-            34.805306,
-            36.190869,
-            37.566235,
-            38.932173,
-            40.289360,
-            41.638398,
-            42.979820,
-            44.314105,
-            45.641683,
-            46.962942,
-            48.278236,
-            49.587884,
-            50.892181,
-        ],
-        dtype=np.float64,
-    )
+        [6.634897, 9.210340, 11.344867, 13.276704, 15.086272, 16.811894, 18.475307, 20.090235, 21.665994, 23.209251,
+            24.724970, 26.216967, 27.688250, 29.141238, 30.577914, 31.999927, 33.408664, 34.805306, 36.190869,
+            37.566235, 38.932173, 40.289360, 41.638398, 42.979820, 44.314105, 45.641683, 46.962942, 48.278236,
+            49.587884, 50.892181, ], dtype=np.float64, )
     if d >= q.size:
         raise ValueError("need more data for correlated SEM estimation")
 
@@ -126,24 +116,3 @@ def _sem_corr_blocking(x: np.ndarray) -> float:
         raise ValueError("need more data for correlated SEM estimation")
 
     return float(np.sqrt(s[k] / (2.0 ** (d - k))))
-
-
-def sem(x: np.ndarray, *, corr: bool = False) -> float:
-    """
-    Standard error of the mean (SEM).
-
-    If corr=False (default), assumes independent samples:
-        SEM = s / sqrt(n)
-
-    If corr=True, accounts for temporal correlation using Jonsson's automated
-    blocking method:
-        https://doi.org/10.1103/PhysRevE.98.043304
-
-    :param x: 1D array of samples.
-    :param corr: If True, estimate SEM for correlated data (blocking). If False, i.i.d. SEM.
-    :return: SEM of the sample mean (Python float).
-    :raises ValueError: If x is invalid or (corr=True) there is insufficient data.
-    """
-    x = np.asarray(x, dtype=np.float64)
-    return _sem_corr_blocking(x) if corr else _sem_iid(x)
-
