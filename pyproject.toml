@@ -1,6 +1,6 @@
 [project]
 name = "pdda"
-version = "0.5"
+version = "0.6"
 authors = [
     { name = "Michael von Domaros", email = "mvondomaros@uni-marburg.de" }
 ]
@@ -13,6 +13,7 @@ requires-python = ">=3.10"
 dependencies = [
     "numba>=0.60,<0.66",
     "numpy>=2,<3",
+    "scipy>=1.17,<2"
 ]
 
 [build-system]
@@ -35,8 +36,10 @@ platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
 [tool.pixi.dependencies]
-hatch = ">=1.17.0,<2"
-pytest = ">=9.0.3,<10"
+hatch = "*"
+pytest = "*"
+scipy-stubs = "*"
+matplotlib = "*"
 
 [tool.pixi.tasks]
 build-conda = { cmd = "pixi publish" }
