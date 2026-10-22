@@ -1,13 +1,18 @@
 cff-version: 1.2.0
-message: "If you use this code, please cite the associated arXiv preprint."
-title: "pdda"
-type: dataset
+message: >-
+  If you use PDDA in scientific work, please cite the RTA paper in
+  preferred-citation. For methods beyond core residence-time diffusivity
+  estimation, including interval selection and propagator calculation, also
+  cite Choosing Spatial Resolution in the Residence-Time Approach to Local
+  Diffusivity (arXiv:2610.29703), listed in references. Also cite the stratum
+  corneum paper when using its SC reference profiles or propagators, and
+  Jonsson's paper when reporting blocking-based uncertainty estimates.
+  See README.md for citation guidance.
+title: "PDDA: Position-Dependent Diffusivity Analysis"
+type: software
+version: "0.8"
 
 authors:
-  - family-names: Thomas
-    given-names: Rinto
-  - family-names: Prabhakar
-    given-names: Praveen Ranganath
   - family-names: von Domaros
     given-names: Michael
 
@@ -22,7 +27,55 @@ preferred-citation:
     - family-names: von Domaros
       given-names: Michael
   year: 2026
-  identifiers:
-    - type: other
-      value: arXiv:2604.01940
-  url: https://arxiv.org/abs/2604.01940
+  journal: "Journal of Chemical Theory and Computation"
+  volume: "22"
+  issue: "18"
+  start: 9235
+  end: 9246
+  doi: 10.1021/acs.jctc.6c00645
+  url: https://doi.org/10.1021/acs.jctc.6c00645
+
+references:
+  - type: article
+    title: "Choosing Spatial Resolution in the Residence-Time Approach to Local Diffusivity"
+    authors:
+      - family-names: von Domaros
+        given-names: Michael
+      - family-names: Thomas
+        given-names: Rinto
+      - family-names: Prabhakar
+        given-names: Praveen Ranganath
+    year: 2026
+    journal: "arXiv"
+    doi: 10.48550/arXiv.2610.29703
+    url: https://arxiv.org/abs/2610.29703
+  - type: article
+    title: "Modeling Diffusion and Permeation Across the Stratum Corneum Lipid Barrier"
+    authors:
+      - family-names: Thomas
+        given-names: Rinto
+      - family-names: Prabhakar
+        given-names: Praveen Ranganath
+      - family-names: Tobias
+        given-names: Douglas J.
+      - family-names: von Domaros
+        given-names: Michael
+    year: 2026
+    journal: "ACS ES&T Air"
+    volume: "3"
+    issue: "2"
+    start: 580
+    end: 589
+    doi: 10.1021/acsestair.5c00412
+    url: https://doi.org/10.1021/acsestair.5c00412
+  - type: article
+    title: "Standard error estimation by an automated blocking method"
+    authors:
+      - family-names: Jonsson
+        given-names: Marius
+    year: 2018
+    journal: "Physical Review E"
+    volume: "98"
+    number: "043304"
+    doi: 10.1103/PhysRevE.98.043304
+    url: https://doi.org/10.1103/PhysRevE.98.043304

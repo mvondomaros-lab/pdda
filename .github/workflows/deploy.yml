@@ -3,13 +3,15 @@ name: Build & Deploy
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: "deploy"
+  group: "deploy-${{ github.ref }}"
   cancel-in-progress: true
 
 env:
@@ -18,7 +20,27 @@ env:
   BRANCH_PREFIX: publish/pdda
 
 jobs:
+  minimum-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+
+      - name: Install minimum runtime dependencies
+        run: python -m pip install . 'numpy==2.0.0' 'scipy==1.13.0' 'pytest>=8'
+
+      - name: Test scientific library
+        run: >-
+          python -m pytest -q tests/test_blocking.py tests/test_profiles.py
+          tests/test_propagators.py tests/test_public_api.py tests/test_rta.py
+
   build:
+    needs: minimum-dependencies
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,7 +49,7 @@ jobs:
       - name: Setup Pixi
         uses: prefix-dev/setup-pixi@v0.9.6
         with:
-          pixi-version: v0.70.2
+          pixi-version: v0.82.0
           cache: true
           cache-write: >-
             ${{ github.event_name == 'push' && github.ref_name == 'main' }}
@@ -35,10 +57,19 @@ jobs:
       - name: Install Pixi environment
         run: pixi install --locked
 
+      - name: Run tests
+        run: pixi run pytest -q
+
+      - name: Check Python style
+        run: |
+          pixi run ruff check .
+          pixi run ruff format --check pdda tests notebooks/*.py
+
       - name: Build artifacts
         run: pixi run build-artifacts
 
       - name: Push to Pages Repo
+        if: github.event_name != 'pull_request'
         env:
           PAGES_PUSH_TOKEN: ${{ secrets.PAGES_PUSH_TOKEN }}
         run: |
@@ -77,6 +108,7 @@ jobs:
           git push -u origin HEAD
 
       - name: Open PR to Pages Repo
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.PAGES_PUSH_TOKEN }}
         run: |
